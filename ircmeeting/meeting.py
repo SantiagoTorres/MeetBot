@@ -36,6 +36,12 @@ import stat
 
 import writers
 import items
+import six
+
+if six.PY3:
+    from importlib import reload
+    unicode = str
+
 reload(writers)
 reload(items)
 
@@ -97,9 +103,17 @@ class Config(object):
     output_codec = 'utf-8'
     # Functions to do the i/o conversion.
     def enc(self, text):
-        return text.encode(self.output_codec, 'replace')
+        # we turn these into no-ops for py3, we'll factor these out later
+        if six.PY2:
+            return text.encode(self.output_codec, 'replace')
+        else:
+            return text
     def dec(self, text):
-        return text.decode(self.input_codec, 'replace')
+        # we turn these into no-ops for py3, we'll factor these out later
+        if six.PY2:
+            return text.decode(self.input_codec, 'replace')
+        else:
+            return text
     # Write out select logfiles
     update_realtime = True
     # CSS configs:
@@ -124,14 +138,14 @@ class Config(object):
         self.M = M
         self.writers = { }
         # Update config values with anything we may have
-        for k,v in extraConfig.iteritems():
+        for k,v in six.iteritems(extraConfig):
             setattr(self, k, v)
 
         if hasattr(self, "init_hook"):
             self.init_hook()
         if writeRawLog:
             self.writers['.log.txt'] = writers.TextLog(self.M)
-        for extension, writer in self.writer_map.iteritems():
+        for extension, writer in six.iteritems(self.writer_map):
             self.writers[extension] = writer(self.M)
         self.safeMode = safeMode
     def filename(self, url=False):
@@ -211,7 +225,7 @@ class Config(object):
             # If it doesn't, then it's assumed that the write took
             # care of writing (or publishing or emailing or wikifying)
             # it itself.
-            if isinstance(text, unicode):
+            if six.PY2 and isinstance(text, unicode):
                 text = self.enc(text)
             if isinstance(text, (str, unicode)):
                 # Have a way to override saving, so no disk files are written.
@@ -500,13 +514,13 @@ class Meeting(MeetingCommands, object):
         if hasattr(self, '_sendReply') and not self._lurk:
             self._sendReply(self.config.enc(x))
         else:
-            print "REPLY:", self.config.enc(x)
+            print("REPLY:", self.config.enc(x))
     def topic(self, x):
         """Set the topic in the IRC channel."""
         if hasattr(self, '_setTopic') and not self._lurk:
             self._setTopic(self.config.enc(x))
         else:
-            print "TOPIC:", self.config.enc(x)
+            print("TOPIC:", self.config.enc(x))
     def settopic(self):
         "The actual code to set the topic"
         if self._meetingTopic:
@@ -644,29 +658,32 @@ if __name__ == '__main__':
             filename = m.group(1)
         else:
             filename = os.path.splitext(fname)[0]
-        print 'Saving to:', filename
+        print('Saving to:', filename)
         channel = '#'+os.path.basename(sys.argv[2]).split('.')[0]
 
         M = Meeting(channel=channel, owner=None,
                     filename=filename, writeRawLog=False)
-        for line in file(sys.argv[2]):
-            # match regular spoken lines:
-            m = logline_re.match(line)
-            if m:
-                time_ = parse_time(m.group(1).strip())
-                nick = m.group(2).strip()
-                line = m.group(3).strip()
-                if M.owner is None:
-                    M.owner = nick ; M.chairs = {nick:True}
-                M.addline(nick, line, time_=time_)
-            # match /me lines
-            m = loglineAction_re.match(line)
-            if m:
-                time_ = parse_time(m.group(1).strip())
-                nick = m.group(2).strip()
-                line = m.group(3).strip()
-                M.addline(nick, "ACTION "+line, time_=time_)
-        #M.save() # should be done by #endmeeting in the logs!
+
+        with open(sys.argv[2]) as fp:
+            for line in fp:
+                # match regular spoken lines:
+                m = logline_re.match(line)
+                print(line)
+                if m:
+                    time_ = parse_time(m.group(1).strip())
+                    nick = m.group(2).strip()
+                    line = m.group(3).strip()
+                    if M.owner is None:
+                        M.owner = nick ; M.chairs = {nick:True}
+                    M.addline(nick, line, time_=time_)
+                # match /me lines
+                m = loglineAction_re.match(line)
+                if m:
+                    time_ = parse_time(m.group(1).strip())
+                    nick = m.group(2).strip()
+                    line = m.group(3).strip()
+                    M.addline(nick, "ACTION "+line, time_=time_)
+            #M.save() # should be done by #endmeeting in the logs!
     else:
-        print 'Command "%s" not found.'%sys.argv[1]
+        print('Command "%s" not found.'%sys.argv[1])
 

@@ -33,6 +33,7 @@ import os
 import re
 import textwrap
 import time
+import six
 
 #from meeting import timeZone, meetBotInfoURL
 
@@ -121,7 +122,7 @@ class _BaseWriter(object):
                 'MeetBotVersion':MeetBotVersion(),
              }
     def iterNickCounts(self):
-        nicks = [ (n,c) for (n,c) in self.M.attendees.iteritems() ]
+        nicks = [ (n,c) for (n,c) in six.iteritems(self.M.attendees)]
         nicks.sort(key=lambda x: x[1], reverse=True)
         return nicks
 
@@ -323,19 +324,20 @@ class _CSSmanager(object):
             # Stylesheet specified
             if getattr(self.M.config, 'cssEmbed_'+name, True):
                 # external stylesheet
-                css = file(css_fname).read()
+                with open(css_fname) as fp:
+                    css = fp.read()
                 return self._css_head%css
             else:
                 # linked stylesheet
                 css_head = ('''<link rel="stylesheet" type="text/css" '''
                             '''href="%s">'''%cssfile)
                 return css_head
-        except Exception, exc:
+        except (Exception) as exc:
             if not self.M.config.safeMode:
                 raise
             import traceback
             traceback.print_exc()
-            print "(exception above ignored, continuing)"
+            print("(exception above ignored, continuing)")
             try:
                 css_fname = os.path.join(os.path.dirname(__file__),
                                          'css-'+name+'-default.css')
@@ -386,7 +388,7 @@ class HTMLlog1(_BaseWriter):
            ]
         lexer = Lexer()
         #from rkddp.interact import interact ; interact()
-        out = pygments.highlight("\n".join(M.lines), lexer, formatter)
+        out = pygments.highlight("\n".join(M.lines), lexer, formatter).decode("utf-8")
         # Hack it to add "pre { white-space: pre-wrap; }", which make
         # it wrap the pygments html logs.  I think that in a newer
         # version of pygmetns, the "prestyles" HTMLFormatter option
@@ -471,9 +473,9 @@ class HTMLlog2(_BaseWriter, _CSSmanager):
                                 'nick':html(m.group('nick')),
                                 'line':html(m.group('line')),})
                 continue
-            print l
-            print m.groups()
-            print "**error**", l
+            print(l)
+            print(m.groups())
+            print("**error**", l)
 
         css = self.getCSS(name='log')
         return html_template%{'pageTitle':"%s log"%html(M.channel),
@@ -907,7 +909,7 @@ class HTMLfromReST(_BaseWriter):
                              settings_overrides={'file_insertion_enabled': 0,
                                                  'raw_enabled': 0,
                                 'output_encoding':self.M.config.output_codec})
-        return rstToHTML
+        return rstToHTML.decode("utf-8")
 
 
 
@@ -1189,8 +1191,8 @@ class PmWiki(MediaWiki, object):
     def heading(self, name, level=1):
         return '%s %s\n'%('!'*(level+1), name)
     def replacements(self):
-        #repl = super(PmWiki, self).replacements(self) # fails, type checking
-        repl = MediaWiki.replacements.im_func(self)
+        repl = super(PmWiki, self).replacements() # fails, type checking
+        #repl = MediaWiki.replacements.im_func(self)
         repl['pageTitleHeading'] = self.heading(repl['pageTitle'],level=0)
         return repl
 

@@ -36,6 +36,7 @@ import time
 import writers
 #from writers import html, rst
 import itertools
+import six
 
 def inbase(i, chars='abcdefghijklmnopqrstuvwxyz', place=0):
     """Converts an integer into a postfix in base 26 using ascii chars.
@@ -84,7 +85,7 @@ class _BaseItem(object):
         return replacements
     def template(self, M, escapewith):
         template = { }
-        for k,v in self.get_replacements(M, escapewith).iteritems():
+        for k,v in six.iteritems(self.get_replacements(M, escapewith)):
             if k not in ('itemtype', 'line', 'topic',
                          'url', 'url_quoteescaped',
                          'nick', 'time', 'link', 'anchor'):

@@ -7,6 +7,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+import six
 
 os.environ['MEETBOT_RUNNING_TESTS'] = '1'
 import ircmeeting.meeting as meeting
@@ -37,8 +38,11 @@ class MeetBotTest(unittest.TestCase):
         try:
             gbls = {"__name__":"__main__",
                     "__file__":"../ircmeeting/meeting.py"}
-            execfile("../ircmeeting/meeting.py", gbls)
-            assert "M" in gbls, "M object not in globals: did it run?"
+            with open("../ircmeeting/meeting.py") as fp:
+                code = compile(fp.read(), "meeting.py", "exec")
+                exec(code, gbls)
+            #execfile("../ircmeeting/meeting.py", gbls)
+            assert("M" in gbls, "M object not in globals: did it run?")
         finally:
             del sys.path[0]
             sys.argv[:] = old_argv
@@ -99,7 +103,10 @@ class MeetBotTest(unittest.TestCase):
         """
         tmpdir = tempfile.mkdtemp(prefix='test-meetbot')
         try:
-            process_meeting(contents=file('test-script-1.log.txt').read(),
+            with open("test-script-1.log.txt") as fp:
+                contents = fp.read()
+
+            process_meeting(contents=contents,
                             filename=os.path.join(tmpdir, 'meeting'),
                             dontSave=False,
                             extraConfig={'writer_map':self.full_writer_map,
@@ -151,20 +158,22 @@ class MeetBotTest(unittest.TestCase):
         M = process_meeting(contents=self.all_commands_test_contents,
                             extraConfig={'writer_map':self.full_writer_map})
         results = M.save()
-        for name, output in results.iteritems():
-            self.assert_('h6k4orkac' in output, "Topic failed for %s"%name)
-            self.assert_('blaoulrao' in output, "Info failed for %s"%name)
-            self.assert_('alrkkcao4' in output, "Idea failed for %s"%name)
-            self.assert_('ntoircoa5' in output, "Help failed for %s"%name)
-            self.assert_('http://bnatorkcao.net' in output,
-                                                  "Link(1) failed for %s"%name)
-            self.assert_('kroacaonteu' in output, "Link(2) failed for %s"%name)
-            self.assert_('http://jrotjkor.net' in output,
-                                        "Link detection(1) failed for %s"%name)
-            self.assert_('krotroun' in output,
-                                        "Link detection(2) failed for %s"%name)
-            self.assert_('xrceoukrc' in output, "Action failed for %s"%name)
-            self.assert_('okbtrokr' in output, "Nick failed for %s"%name)
+        for name, output in six.iteritems(results):
+            if isinstance(output, bytes):
+                output = output.decode('utf-8')
+            self.assertTrue('h6k4orkac' in output)#, "Topic failed for %s"%name)
+            self.assertTrue('blaoulrao' in output, "Info failed for %s"%name)
+            self.assertTrue('alrkkcao4' in output, "Idea failed for %s"%name)
+            self.assertTrue('ntoircoa5' in output, "Help failed for %s"%name)
+            self.assertTrue('http://bnatorkcao.net' in output,
+                                                     "Link(1) failed for %s"%name)
+            self.assertTrue('kroacaonteu' in output, "Link(2) failed for %s"%name)
+            self.assertTrue('http://jrotjkor.net' in output,
+                                            "Link detection(1) failed for %s"%name)
+            self.assertTrue('krotroun' in output,
+                                            "Link detection(2) failed for %s"%name)
+            self.assertTrue('xrceoukrc' in output, "Action failed for %s"%name)
+            self.assertTrue('okbtrokr' in output, "Nick failed for %s"%name)
 
             # Things which should only appear or not appear in the
             # notes (not the logs):
@@ -275,7 +284,7 @@ class MeetBotTest(unittest.TestCase):
     def test_css_file(self):
         tmpf = tempfile.NamedTemporaryFile()
         magic_string = '546uorck6o45tuo6'
-        tmpf.write(magic_string)
+        tmpf.write(six.b(magic_string))
         tmpf.flush()
         extraConfig={'cssFile_minutes':  tmpf.name,
                      'cssFile_log':      tmpf.name,}
@@ -287,7 +296,7 @@ class MeetBotTest(unittest.TestCase):
         self.assert_(magic_string                  in results['.log.html'])
     def test_css_file_embed(self):
         tmpf = tempfile.NamedTemporaryFile()
-        magic_string = '546uorck6o45tuo6'
+        magic_string = b'546uorck6o45tuo6'
         tmpf.write(magic_string)
         tmpf.flush()
         extraConfig={'cssFile_minutes':  tmpf.name,
@@ -303,7 +312,7 @@ class MeetBotTest(unittest.TestCase):
     def test_css_none(self):
         tmpf = tempfile.NamedTemporaryFile()
         magic_string = '546uorck6o45tuo6'
-        tmpf.write(magic_string)
+        tmpf.write(six.b(magic_string))
         tmpf.flush()
         extraConfig={'cssFile_minutes':  'none',
                      'cssFile_log':      'none',}
@@ -344,7 +353,7 @@ if __name__ == '__main__':
         unittest.main()
     else:
         for testname in sys.argv[1:]:
-            print testname
+            print(testname)
             if hasattr(MeetBotTest, testname):
                 MeetBotTest(methodName=testname).debug()
             else:
