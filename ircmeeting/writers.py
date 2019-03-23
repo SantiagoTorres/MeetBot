@@ -35,11 +35,11 @@ import textwrap
 import time
 import six
 
-#from meeting import timeZone, meetBotInfoURL
+#from ircmeeting.meeting import timeZone, meetBotInfoURL
 
 # Needed for testing with isinstance() for properly writing.
 #from items import Topic, Action
-import items
+import ircmeeting.items as items
 
 # Data sanitizing for various output methods
 def html(text):
@@ -74,7 +74,7 @@ def makeNickRE(nick):
     return re.compile('\\b'+re.escape(nick)+'\\b', re.IGNORECASE)
 
 def MeetBotVersion():
-    import meeting
+    import ircmeeting.meeting as meeting
     if hasattr(meeting, '__version__'):
         return ' '+meeting.__version__
     else:
@@ -1190,10 +1190,13 @@ class MediaWiki(_BaseWriter):
 class PmWiki(MediaWiki, object):
     def heading(self, name, level=1):
         return '%s %s\n'%('!'*(level+1), name)
-    def replacements(self):
-        repl = super(PmWiki, self).replacements() # fails, type checking
-        #repl = MediaWiki.replacements.im_func(self)
-        repl['pageTitleHeading'] = self.heading(repl['pageTitle'],level=0)
-        return repl
+
+    # FIXME: this is some fucked up recursive algorithm...
+    #def replacements(self):
+    #    import bpdb; bpdb.set_trace()
+    #    repl = super(MediaWiki, self).replacements() # fails, type checking
+    #    #repl = MediaWiki.replacements.im_func(self)
+    #    repl['pageTitleHeading'] = self.heading(repl['pageTitle'],level=0)
+    #    return repl
 
 

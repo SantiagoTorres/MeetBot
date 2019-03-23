@@ -28,16 +28,23 @@
 
 ###
 
+import six
+
 import supybot.utils as utils
 from supybot.commands import *
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
 import supybot.ircmsgs as ircmsgs
+import MeetBot.supybotconfig as supybotconfig
+
+# FIXME: I honestly don't know why we need to call reload so much
+if six.PY3:
+    from importlib import reload
+    unicode = str
 
 import time
 import ircmeeting.meeting as meeting
-import supybotconfig
 # Because of the way we override names, we need to reload these in order.
 meeting = reload(meeting)
 supybotconfig = reload(supybotconfig)
@@ -142,8 +149,8 @@ class MeetBot(callbacks.Plugin):
                     M.addrawline(nick, payload)
         except:
             import traceback
-            print traceback.print_exc()
-            print "(above exception in outFilter, ignoring)"
+            print(traceback.print_exc())
+            print("(above exception in outFilter, ignoring)")
         return msg
 
     # These are admin commands, for use by the bot owner when there
@@ -255,46 +262,48 @@ class MeetBot(callbacks.Plugin):
 
     pingall = wrap(pingall, [optional('text', None)])
 
-    def __getattr__(self, name):
-        """Proxy between proper supybot commands and # MeetBot commands.
-
-        This allows you to use MeetBot: <command> <line of the command>
-        instead of the typical #command version.  However, it's disabled
-        by default as there are some possible unresolved issues with it.
-
-        To enable this, you must comment out a line in the main code.
-        It may be enabled in a future version.
-        """
-        # First, proxy to our parent classes (__parent__ set in __init__)
-        try:
-            return self.__parent.__getattr__(name)
-        except AttributeError:
-            pass
-        # Disabled for now.  Uncomment this if you want to use this.
-        raise AttributeError
-
-        if not hasattr(meeting.Meeting, "do_"+name):
-            raise AttributeError
-
-        def wrapped_function(self, irc, msg, args, message):
-            channel = msg.args[0]
-            payload = msg.args[1]
-
-            #from fitz import interactnow ; reload(interactnow)
-
-            #print type(payload)
-            payload = "#%s %s"%(name,message)
-            #print payload
-            import copy
-            msg = copy.copy(msg)
-            msg.args = (channel, payload)
-
-            self.doPrivmsg(irc, msg)
-        # Give it the signature we need to be a callable supybot
-        # command (it does check more than I'd like).  Heavy Wizardry.
-        instancemethod = type(self.__getattr__)
-        wrapped_function = wrap(wrapped_function, [optional('text', '')])
-        return instancemethod(wrapped_function, self, MeetBot)
+# FIXME: this proxy doesn't seem to be necsessary and it does seem to break
+# things all over...
+#    def __getattr__(self, name):
+#        """Proxy between proper supybot commands and # MeetBot commands.
+#
+#        This allows you to use MeetBot: <command> <line of the command>
+#        instead of the typical #command version.  However, it's disabled
+#        by default as there are some possible unresolved issues with it.
+#
+#        To enable this, you must comment out a line in the main code.
+#        It may be enabled in a future version.
+#        """
+#        # First, proxy to our parent classes (__parent__ set in __init__)
+#        try:
+#            return self.__parent.__getattr__(name)
+#        except AttributeError:
+#            pass
+#        # Disabled for now.  Uncomment this if you want to use this.
+#        raise AttributeError
+#
+#        if not hasattr(meeting.Meeting, "do_"+name):
+#            raise AttributeError
+#
+#        def wrapped_function(self, irc, msg, args, message):
+#            channel = msg.args[0]
+#            payload = msg.args[1]
+#
+#            #from fitz import interactnow ; reload(interactnow)
+#
+#            #print type(payload)
+#            payload = "#%s %s"%(name,message)
+#            #print payload
+#            import copy
+#            msg = copy.copy(msg)
+#            msg.args = (channel, payload)
+#
+#            self.doPrivmsg(irc, msg)
+#        # Give it the signature we need to be a callable supybot
+#        # command (it does check more than I'd like).  Heavy Wizardry.
+#        instancemethod = type(self.__getattr__)
+#        wrapped_function = wrap(wrapped_function, [optional('text', '')])
+#        return instancemethod(wrapped_function, self, MeetBot)
 
 Class = MeetBot
 

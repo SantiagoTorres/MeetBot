@@ -34,8 +34,8 @@ import os
 import re
 import stat
 
-import writers
-import items
+import ircmeeting.writers as writers
+import ircmeeting.items as items
 import six
 
 if six.PY3:
