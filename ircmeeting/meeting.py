@@ -34,8 +34,8 @@ import os
 import re
 import stat
 
-import ircmeeting.writers as writers
-import ircmeeting.items as items
+from . import writers
+from . import items
 import six
 
 if six.PY3:
@@ -286,7 +286,7 @@ elif 'MEETBOT_RUNNING_TESTS' in os.environ:   pass
 else:
     # First source of config: try just plain importing it
     try:
-        import meetingLocalConfig
+        from . import meetingLocalConfig
         meetingLocalConfig = reload(meetingLocalConfig)
         if hasattr(meetingLocalConfig, 'Config'):
             LocalConfig = meetingLocalConfig.Config

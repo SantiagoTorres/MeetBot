@@ -39,7 +39,7 @@ import six
 
 # Needed for testing with isinstance() for properly writing.
 #from items import Topic, Action
-import ircmeeting.items as items
+from . import items
 
 # Data sanitizing for various output methods
 def html(text):
@@ -74,7 +74,7 @@ def makeNickRE(nick):
     return re.compile('\\b'+re.escape(nick)+'\\b', re.IGNORECASE)
 
 def MeetBotVersion():
-    import ircmeeting.meeting as meeting
+    from . import meeting
     if hasattr(meeting, '__version__'):
         return ' '+meeting.__version__
     else:

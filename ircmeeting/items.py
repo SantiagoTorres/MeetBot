@@ -33,7 +33,7 @@ import os
 import re
 import time
 
-import ircmeeting.writers as writers
+from . import writers
 #from writers import html, rst
 import itertools
 import six

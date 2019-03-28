@@ -44,7 +44,7 @@ if six.PY3:
     unicode = str
 
 import time
-import ircmeeting.meeting as meeting
+from .ircmeeting import meeting
 # Because of the way we override names, we need to reload these in order.
 meeting = reload(meeting)
 supybotconfig = reload(supybotconfig)

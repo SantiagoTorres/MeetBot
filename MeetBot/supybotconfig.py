@@ -35,8 +35,8 @@ import types
 import supybot.conf as conf
 import supybot.registry as registry
 
-import ircmeeting.meeting as meeting
-import ircmeeting.writers as writers
+from .ircmeeting import meeting
+from .ircmeeting import writers
 
 # The plugin group for configuration
 MeetBotConfigGroup = conf.registerPlugin('MeetBot')
